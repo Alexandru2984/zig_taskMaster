@@ -1,0 +1,21 @@
+✅ Config loaded from .env
+✅ AppState initialized with GPA
+🗄️ Initializing SurrealDB schema...
+✅ SurrealDB schema initialized
+✅ Rate limiters initialized
+INFO: Listening on port 9000
+
+╔══════════════════════════════════════╗
+║  🦎 Task Manager                   ║
+║  Running on http://127.0.0.1:9000    ║
+╚══════════════════════════════════════╝
+
+INFO: Server is running 1 worker X 2 threads with facil.io 0.7.4 (epoll)
+* Detected capacity: 131056 open file limit
+* Root pid: 95607
+* Press ^C to stop
+
+📧 Sending email to: 984.alexmihai+testA@gmail.com via Brevo API
+✅ Email sent successfully to: 984.alexmihai+testA@gmail.com
+Reset token for 984.alexmihai+testA@gmail.com: 9fd77a5c30df6458f857ca5d896729651d213b4b633c2ebbfddd2ed347216002
+127.0.0.1 - - [Tue, 23 Dec 2025 22:11:24 GMT] "POST /api/auth/forgot-password HTTP/1.1" 200 61b 1116706us

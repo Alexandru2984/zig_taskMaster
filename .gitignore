@@ -1,0 +1,34 @@
+# Zig
+zig-out/
+zig-cache/
+.zig-cache/
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+
+# WASM (generated)
+public/app.wasm
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# SurrealDB
+*.db
+surreal.db/
+
+# Environment
+.env
+.env.local
+mail_settings.txt
+db_settings.txt

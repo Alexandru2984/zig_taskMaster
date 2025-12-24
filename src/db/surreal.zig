@@ -7,6 +7,7 @@ const std = @import("std");
 const config = @import("../config/config.zig");
 const validation = @import("../util/validation.zig");
 const http_client = @import("http_client.zig");
+const models = @import("../domain/models.zig");
 
 // SECURITY: Escape string for safe SQL interpolation
 // Uses validation.sanitizeForSurrealQL to prevent SQL injection
@@ -244,10 +245,13 @@ pub fn getTasksByUser(allocator: std.mem.Allocator, user_id: []const u8) ![]u8 {
 }
 
 pub fn toggleTask(allocator: std.mem.Allocator, task_id: []const u8) ![]u8 {
+    const safe_id = try escape(allocator, task_id);
+    defer allocator.free(safe_id);
+
     // First get current state
     const get_sql = try std.fmt.allocPrint(allocator,
         \\SELECT completed FROM {s};
-    , .{task_id});
+    , .{safe_id});
     defer allocator.free(get_sql);
 
     const current = try query(allocator, get_sql);
@@ -256,16 +260,19 @@ pub fn toggleTask(allocator: std.mem.Allocator, task_id: []const u8) ![]u8 {
     // Toggle
     const toggle_sql = try std.fmt.allocPrint(allocator,
         \\UPDATE {s} SET completed = !completed;
-    , .{task_id});
+    , .{safe_id});
     defer allocator.free(toggle_sql);
 
     return try query(allocator, toggle_sql);
 }
 
 pub fn deleteTask(allocator: std.mem.Allocator, task_id: []const u8) ![]u8 {
+    const safe_id = try escape(allocator, task_id);
+    defer allocator.free(safe_id);
+
     const sql = try std.fmt.allocPrint(allocator,
         \\DELETE {s};
-    , .{task_id});
+    , .{safe_id});
     defer allocator.free(sql);
 
     return try query(allocator, sql);
@@ -274,23 +281,29 @@ pub fn deleteTask(allocator: std.mem.Allocator, task_id: []const u8) ![]u8 {
 // ============== TASK OWNERSHIP ==============
 
 pub fn getTaskOwner(allocator: std.mem.Allocator, task_id: []const u8) !?[]const u8 {
+    const safe_id = try escape(allocator, task_id);
+    defer allocator.free(safe_id);
+
     const sql = try std.fmt.allocPrint(allocator,
         \\SELECT user_id FROM {s};
-    , .{task_id});
+    , .{safe_id});
     defer allocator.free(sql);
 
     const result = try query(allocator, sql);
     defer allocator.free(result);
 
-    // Parse user_id from result
-    if (std.mem.indexOf(u8, result, "\"user_id\":\"")) |start| {
-        const value_start = start + 11; // length of "\"user_id\":\""
-        if (std.mem.indexOfPos(u8, result, value_start, "\"")) |end| {
-            return try allocator.dupe(u8, result[value_start..end]);
-        }
+    const TaskOwner = struct {
+        user_id: []const u8,
+    };
+
+    const parsed = try std.json.parseFromSlice([]models.SurrealResponse(TaskOwner), allocator, result, .{ .ignore_unknown_fields = true });
+    defer parsed.deinit();
+
+    if (parsed.value.len == 0 or parsed.value[0].result.len == 0) {
+        return null;
     }
-    
-    return null;
+
+    return try allocator.dupe(u8, parsed.value[0].result[0].user_id);
 }
 
 pub fn verifyTaskOwnership(allocator: std.mem.Allocator, task_id: []const u8, user_id: []const u8) !bool {
@@ -344,29 +357,43 @@ pub fn createSession(allocator: std.mem.Allocator, user_id: []const u8) ![]u8 {
 /// Validate a session token and return the user_id if valid
 /// Returns null if token is invalid or expired
 pub fn validateSession(allocator: std.mem.Allocator, token: []const u8) !?[]u8 {
+    const safe_token = try escape(allocator, token);
+    defer allocator.free(safe_token);
+
+    // Get user_id and expiration time (in ms)
     const sql = try std.fmt.allocPrint(allocator,
-        \\SELECT user_id, expires_at FROM sessions WHERE token = "{s}";
-    , .{token});
+        \\SELECT user_id, time::unix(expires_at) * 1000 as expires_ms FROM sessions WHERE token = "{s}";
+    , .{safe_token});
     defer allocator.free(sql);
 
     const result = try query(allocator, sql);
     defer allocator.free(result);
 
-    // Check if we got a result
-    if (std.mem.indexOf(u8, result, "\"user_id\":\"")) |start| {
-        // Parse user_id
-        const value_start = start + 11;
-        if (std.mem.indexOfPos(u8, result, value_start, "\"")) |end| {
-            const user_id = result[value_start..end];
-            
-            // TODO: Check expiration (for now, just return user_id)
-            // In production, parse expires_at and compare with current time
-            
-            return try allocator.dupe(u8, user_id);
-        }
+    const SessionResult = struct {
+        user_id: []const u8,
+        expires_ms: i64,
+    };
+
+    const parsed = try std.json.parseFromSlice([]models.SurrealResponse(SessionResult), allocator, result, .{ .ignore_unknown_fields = true });
+    defer parsed.deinit();
+
+    if (parsed.value.len == 0 or parsed.value[0].result.len == 0) {
+        return null;
     }
-    
-    return null;
+
+    const session = parsed.value[0].result[0];
+
+    // Check expiration
+    const now = std.time.milliTimestamp();
+    if (session.expires_ms < now) {
+        // Expired
+        // Ideally we should delete it here, but let's leave cleanup to the background job or explicit logout
+        // to keep this function fast and focused on validation.
+        // Or we can fire-and-forget a delete? No, async is hard here.
+        return null;
+    }
+
+    return try allocator.dupe(u8, session.user_id);
 }
 
 /// Delete a specific session (logout)

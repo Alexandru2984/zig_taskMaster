@@ -1,6 +1,7 @@
 // Authentication module for Task Manager
 // SECURITY: Uses Argon2id for password hashing (industry standard)
 const std = @import("std");
+const config = @import("../config/config.zig");
 
 // Argon2id parameters (OWASP recommendations for password hashing)
 const ARGON2_T_COST = 3;          // Time cost (iterations)
@@ -108,7 +109,7 @@ fn verifyArgon2Password(allocator: std.mem.Allocator, stored_hash: []const u8, p
 
 fn verifyLegacyPassword(allocator: std.mem.Allocator, stored_hash: []const u8, password: []const u8) !bool {
     // Legacy FNV-1a hash (for migration only)
-    const SECRET = "zig-task-manager-secret-2024";
+    const SECRET = config.get("LEGACY_SECRET") orelse "zig-task-manager-secret-2024"; // Fallback for dev/test if not set, but should be set in prod
     var hash: u64 = 14695981039346656037;
     for (password) |byte| {
         hash ^= byte;

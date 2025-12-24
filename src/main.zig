@@ -30,6 +30,11 @@ pub fn main() !void {
     // Initialize rate limiters
     rate_limiter.initAll(allocator);
     defer rate_limiter.deinitAll();
+    
+    // Start cleanup thread
+    rate_limiter.startCleanupThread() catch |err| {
+        log.warn("Failed to start rate limiter cleanup thread: {}", .{err});
+    };
 
     var listener = zap.HttpListener.init(.{
         .port = 9000,

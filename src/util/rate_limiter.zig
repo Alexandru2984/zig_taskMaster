@@ -143,7 +143,51 @@ pub fn initAll(allocator: std.mem.Allocator) void {
 }
 
 /// Cleanup all rate limiters
+pub fn cleanupAll() void {
+    if (login_limiter) |*l| l.cleanup();
+    if (signup_limiter) |*l| l.cleanup();
+    if (forgot_password_limiter) |*l| l.cleanup();
+}
+
+var cleanup_thread: ?std.Thread = null;
+var cleanup_running: std.atomic.Value(bool) = std.atomic.Value(bool).init(false);
+
+fn cleanupLoop() void {
+    while (cleanup_running.load(.acquire)) {
+        // Sleep for 60 seconds (check every minute)
+        // We sleep in small chunks to allow faster shutdown
+        var i: usize = 0;
+        while (i < 60 and cleanup_running.load(.acquire)) : (i += 1) {
+            std.Thread.sleep(1 * std.time.ns_per_s);
+        }
+        
+        if (cleanup_running.load(.acquire)) {
+            cleanupAll();
+        }
+    }
+}
+
+pub fn startCleanupThread() !void {
+    if (cleanup_thread != null) return;
+    
+    cleanup_running.store(true, .release);
+    cleanup_thread = try std.Thread.spawn(.{}, cleanupLoop, .{});
+    std.debug.print("✅ Rate limiter cleanup thread started\n", .{});
+}
+
+pub fn stopCleanupThread() void {
+    if (cleanup_thread) |thread| {
+        cleanup_running.store(false, .release);
+        thread.join();
+        cleanup_thread = null;
+        std.debug.print("🛑 Rate limiter cleanup thread stopped\n", .{});
+    }
+}
+
+/// Cleanup all rate limiters
 pub fn deinitAll() void {
+    stopCleanupThread();
+
     if (login_limiter) |*l| l.deinit();
     if (signup_limiter) |*l| l.deinit();
     if (forgot_password_limiter) |*l| l.deinit();

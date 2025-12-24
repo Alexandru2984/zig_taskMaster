@@ -30,7 +30,7 @@ pub const Task = struct {
 pub const Session = struct {
     token: []const u8,
     user_id: []const u8,
-    expires_at: i64,
+    expires_at: []const u8,
 };
 
 // ==========================================

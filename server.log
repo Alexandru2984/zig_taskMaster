@@ -12,10 +12,70 @@ INFO: Listening on port 9000
 
 INFO: Server is running 1 worker X 2 threads with facil.io 0.7.4 (epoll)
 * Detected capacity: 131056 open file limit
-* Root pid: 95607
+* Root pid: 103577
 * Press ^C to stop
 
-📧 Sending email to: 984.alexmihai+testA@gmail.com via Brevo API
-✅ Email sent successfully to: 984.alexmihai+testA@gmail.com
-Reset token for 984.alexmihai+testA@gmail.com: 9fd77a5c30df6458f857ca5d896729651d213b4b633c2ebbfddd2ed347216002
-127.0.0.1 - - [Tue, 23 Dec 2025 22:11:24 GMT] "POST /api/auth/forgot-password HTTP/1.1" 200 61b 1116706us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:50 GMT] "GET /api/health HTTP/1.1" 200 20b 166us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:50 GMT] "GET /api/ready HTTP/1.1" 200 62b 42166us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:50 GMT] "GET /api/metrics HTTP/1.1" 200 196b 65us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:50 GMT] "GET / HTTP/1.1" 200 13373b 294us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:50 GMT] "HEAD / HTTP/1.1" 200 13373b 258us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:50 GMT] "HEAD /app.js HTTP/1.1" 200 22601b 237us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:50 GMT] "HEAD / HTTP/1.1" 200 13373b 246us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:50 GMT] "HEAD / HTTP/1.1" 200 13373b 246us
+📧 Sending HTML email to: test7572@example.com via Brevo API
+✅ HTML Email sent successfully to: test7572@example.com
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:53 GMT] "POST /api/auth/signup HTTP/1.1" 201 127b 2727068us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:53 GMT] "GET /api/auth/me HTTP/1.1" 200 108b 87158us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:54 GMT] "POST /api/auth/login HTTP/1.1" 200 192b 1668127us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:55 GMT] "GET /api/tasks HTTP/1.1" 200 2b 78014us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:55 GMT] "POST /api/tasks HTTP/1.1" 201 126b 82126us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:55 GMT] "GET /api/tasks HTTP/1.1" 200 143b 90757us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:55 GMT] "PUT /api/tasks/tasks:a6rnjovwv29ndh90ejpw HTTP/1.1" 200 140b 164373us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:55 GMT] "DELETE /api/tasks/tasks:a6rnjovwv29ndh90ejpw HTTP/1.1" 200 20b 113054us
+127.0.0.1 - - [Tue, 23 Dec 2025 22:30:56 GMT] "GET /etc/passwd HTTP/1.1" 404 13b 70us
+INFO: (103577) detected exit signal.
+INFO:    ---  Shutdown Complete  ---
+
+error(gpa): memory address 0x7726ee460000 leaked: 
+/snap/zig/15308/lib/std/http/Client.zig:249:46: 0x1236d45 in create (std.zig)
+            const base = try gpa.alignedAlloc(u8, .of(Plain), alloc_len);
+                                             ^
+/snap/zig/15308/lib/std/http/Client.zig:1455:51: 0x12091e3 in connectTcpOptions (std.zig)
+            const pc = try Connection.Plain.create(client, proxied_host, proxied_port, stream);
+                                                  ^
+/snap/zig/15308/lib/std/http/Client.zig:1408:29: 0x120870c in connectTcp (std.zig)
+    return connectTcpOptions(client, .{ .host = host, .port = port, .protocol = protocol });
+                            ^
+/snap/zig/15308/lib/std/http/Client.zig:1583:38: 0x11dbb35 in connect (std.zig)
+    } orelse return client.connectTcp(host, port, protocol);
+                                     ^
+/snap/zig/15308/lib/std/http/Client.zig:1699:36: 0x11bae0b in request (std.zig)
+        break :c try client.connect(host_name, uriPort(uri, protocol), protocol);
+                                   ^
+/snap/zig/15308/lib/std/http/Client.zig:1789:26: 0x117f178 in fetch (std.zig)
+    var req = try request(client, method, uri, .{
+                         ^
+
+error(gpa): memory address 0x7726ee464000 leaked: 
+/snap/zig/15308/lib/std/http/Client.zig:249:46: 0x1236d45 in create (std.zig)
+            const base = try gpa.alignedAlloc(u8, .of(Plain), alloc_len);
+                                             ^
+/snap/zig/15308/lib/std/http/Client.zig:1455:51: 0x12091e3 in connectTcpOptions (std.zig)
+            const pc = try Connection.Plain.create(client, proxied_host, proxied_port, stream);
+                                                  ^
+/snap/zig/15308/lib/std/http/Client.zig:1408:29: 0x120870c in connectTcp (std.zig)
+    return connectTcpOptions(client, .{ .host = host, .port = port, .protocol = protocol });
+                            ^
+/snap/zig/15308/lib/std/http/Client.zig:1583:38: 0x11dbb35 in connect (std.zig)
+    } orelse return client.connectTcp(host, port, protocol);
+                                     ^
+/snap/zig/15308/lib/std/http/Client.zig:1699:36: 0x11bae0b in request (std.zig)
+        break :c try client.connect(host_name, uriPort(uri, protocol), protocol);
+                                   ^
+/snap/zig/15308/lib/std/http/Client.zig:1789:26: 0x117f178 in fetch (std.zig)
+    var req = try request(client, method, uri, .{
+                         ^
+
+⚠️ Memory leak detected!
+

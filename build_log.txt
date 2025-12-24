@@ -1,0 +1,26 @@
+install
++- install taskmanager
+   +- compile exe taskmanager Debug native 2 errors
+src/db/surreal.zig:361:50: error: use of undeclared identifier 'models'
+    const parsed = try std.json.parseFromSlice([]models.SurrealResponse(SessionResult), allocator, result, .{ .ignore_unknown_fields = true });
+                                                 ^~~~~~
+src/handlers/auth.zig:67:35: error: root source file struct 'services.auth' has no member named 'hashPassword'
+    const password_hash = try auth.hashPassword(req_alloc, request.password);
+                              ~~~~^~~~~~~~~~~~~
+src/services/auth.zig:3:1: note: struct declared here
+const std = @import("std");
+^~~~~
+referenced by:
+    handleApi: src/main.zig:116:38
+    handleRequest: src/main.zig:70:22
+    5 reference(s) hidden; use '-freference-trace=7' to see all references
+error: the following command failed with 2 compilation errors:
+/snap/zig/15308/zig build-exe -ODebug --dep zap -Mroot=/home/micu/Desktop/update_zig_testing/src/main.zig .zig-cache/o/f2143298f42eaac7b9fe2468667f61f0/libfacil.io.so -rpath .zig-cache/o/f2143298f42eaac7b9fe2468667f61f0 -ODebug -I .zig-cache/o/a6fb089e932f705ef1065695b36c6e90 -Mzap=/home/micu/.cache/zig/p/zap-0.10.6-GoeB8xCEJABLgoiZjWZMMT5TsoZ5OO2EZe6j24RTUYEH/src/zap.zig -lc --cache-dir .zig-cache --global-cache-dir /home/micu/.cache/zig --name taskmanager --zig-lib-dir /snap/zig/15308/lib/ --listen=-
+
+Build Summary: 4/7 steps succeeded; 1 failed
+install transitive failure
++- install taskmanager transitive failure
+   +- compile exe taskmanager Debug native 2 errors
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/18b7221cb8e0c6f52204b063e076cd94/build /snap/zig/15308/zig /snap/zig/15308/lib /home/micu/Desktop/update_zig_testing .zig-cache /home/micu/.cache/zig --seed 0x28a45fba -Zdde0c9e84a368c9d

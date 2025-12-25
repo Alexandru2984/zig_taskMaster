@@ -14,6 +14,7 @@ pub const User = struct {
     avatar: ?[]const u8 = null,
     email_verified: bool = false,
     verification_token: ?[]const u8 = null,
+    verification_expires: ?i64 = null,
     reset_token: ?[]const u8 = null,
     reset_expires: ?i64 = null,
 };

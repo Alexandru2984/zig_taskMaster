@@ -98,6 +98,7 @@ pub fn jsonCreated(r: zap.Request, data: anytype) !void {
     var buf: [128]u8 = undefined;
     var adapter = w.adaptToNewApi(&buf);
     try std.json.Stringify.value(data, .{}, &adapter.new_interface);
+    try adapter.new_interface.flush();  // CRITICAL: must flush before sendBody!
     try r.sendBody(list.items);
 }
 

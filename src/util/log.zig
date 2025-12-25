@@ -63,11 +63,11 @@ pub fn err(comptime fmt: []const u8, args: anytype) void {
 }
 
 // Startup banner
-pub fn banner(app_name: []const u8, port: u16) void {
+pub fn banner(app_name: []const u8, interface: []const u8, port: u16) void {
     std.debug.print("\n", .{});
     std.debug.print("╔══════════════════════════════════════╗\n", .{});
     std.debug.print("║  🦎 {s: <30} ║\n", .{app_name});
-    std.debug.print("║  Running on http://127.0.0.1:{d: <5}   ║\n", .{port});
+    std.debug.print("║  Running on http://{s}:{d: <5}  ║\n", .{ interface, port });
     std.debug.print("╚══════════════════════════════════════╝\n", .{});
     std.debug.print("\n", .{});
 }

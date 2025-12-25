@@ -150,3 +150,149 @@ pub fn executeQuery(allocator: std.mem.Allocator, sql: []const u8) ![]u8 {
     std.debug.print("❌ DB query failed after {d} attempts\n", .{MAX_RETRIES});
     return last_error orelse HttpError.ConnectionFailed;
 }
+
+/// Execute SQL query with bind variables (SECURE - prevents SQL injection)
+/// Variables are passed as a struct with field names matching $variable names in query
+/// Example: queryWithVars(alloc, "SELECT * FROM users WHERE email = $email", .{ .email = "test@example.com" })
+pub fn executeQueryWithVars(allocator: std.mem.Allocator, query_template: []const u8, vars: anytype) ![]u8 {
+    // Build the full query with LET statements for each variable
+    var query_builder = std.ArrayListUnmanaged(u8){};
+    defer query_builder.deinit(allocator);
+    
+    const writer = query_builder.writer(allocator);
+    
+    // Iterate over struct fields and create LET statements
+    const VarsType = @TypeOf(vars);
+    const fields = @typeInfo(VarsType).@"struct".fields;
+    
+    inline for (fields) |field| {
+        const value = @field(vars, field.name);
+        const FieldType = @TypeOf(value);
+        
+        // Write: LET $fieldname = <value>;
+        try writer.print("LET ${s} = ", .{field.name});
+        
+        // Handle different types
+        if (FieldType == []const u8 or FieldType == []u8) {
+            // String: escape and quote
+            try writer.writeByte('"');
+            for (value) |c| {
+                switch (c) {
+                    '"' => try writer.writeAll("\\\""),
+                    '\\' => try writer.writeAll("\\\\"),
+                    '\n' => try writer.writeAll("\\n"),
+                    '\r' => try writer.writeAll("\\r"),
+                    '\t' => try writer.writeAll("\\t"),
+                    else => try writer.writeByte(c),
+                }
+            }
+            try writer.writeAll("\";\n");
+        } else if (@typeInfo(FieldType) == .int or @typeInfo(FieldType) == .comptime_int) {
+            // Integer: write directly
+            try writer.print("{d};\n", .{value});
+        } else if (@typeInfo(FieldType) == .bool) {
+            // Boolean
+            try writer.print("{s};\n", .{if (value) "true" else "false"});
+        } else if (@typeInfo(FieldType) == .optional) {
+            // Optional: write NONE if null, otherwise unwrap
+            if (value) |v| {
+                // Recursively handle the inner type - for now assume string
+                try writer.writeByte('"');
+                for (v) |c| {
+                    switch (c) {
+                        '"' => try writer.writeAll("\\\""),
+                        '\\' => try writer.writeAll("\\\\"),
+                        else => try writer.writeByte(c),
+                    }
+                }
+                try writer.writeAll("\";\n");
+            } else {
+                try writer.writeAll("NONE;\n");
+            }
+        } else if (FieldType == [64]u8) {
+            // Fixed-size array (token) - treat as string
+            try writer.writeByte('"');
+            try writer.writeAll(&value);
+            try writer.writeAll("\";\n");
+        } else {
+            // Unknown type - try to print as-is
+            try writer.print("{any};\n", .{value});
+        }
+    }
+    
+    // Append the actual query template
+    try writer.writeAll(query_template);
+    
+    // Execute the complete query
+    const full_query = try query_builder.toOwnedSlice(allocator);
+    defer allocator.free(full_query);
+    
+    const raw_response = try executeQuery(allocator, full_query);
+    defer allocator.free(raw_response);
+    
+    // Post-process: When using LET statements, SurrealDB returns multiple results.
+    // The first N-1 are LET results (with result: null), the last is the actual query result.
+    // We need to extract only the last result to maintain compatibility with existing parsers.
+    // Raw response looks like: [{...}, {...}, {...last...}]
+    // We want to return: [{...last...}]
+    
+    // Find the last '{' before the final '}]'
+    if (raw_response.len < 3 or raw_response[0] != '[') {
+        // Not a JSON array, return as-is (shouldn't happen)
+        return try allocator.dupe(u8, raw_response);
+    }
+    
+    // Find the last complete object in the array
+    var depth: i32 = 0;
+    var last_obj_start: ?usize = null;
+    var i: usize = raw_response.len;
+    while (i > 0) {
+        i -= 1;
+        const c = raw_response[i];
+        if (c == '}') {
+            if (depth == 0) {
+                // This is the end of the last object
+            }
+            depth += 1;
+        } else if (c == '{') {
+            depth -= 1;
+            if (depth == 0) {
+                // Found the start of the last object
+                last_obj_start = i;
+                break;
+            }
+        }
+    }
+    
+    if (last_obj_start) |start| {
+        // Extract just the last object, wrapped in an array
+        var result = std.ArrayListUnmanaged(u8){};
+        try result.append(allocator, '[');
+        try result.appendSlice(allocator, raw_response[start..]);
+        // raw_response ends with ']', so we need to remove any trailing junk and ensure it's "]"
+        // Actually raw_response[start..] should give us "{...}]", we want "[{...}]"
+        // So we need to find where the object ends
+        var end_idx: usize = 0;
+        depth = 0;
+        for (raw_response[start..], 0..) |c, j| {
+            if (c == '{') depth += 1 else if (c == '}') {
+                depth -= 1;
+                if (depth == 0) {
+                    end_idx = start + j + 1;
+                    break;
+                }
+            }
+        }
+        
+        // Build the result properly
+        result.deinit(allocator);
+        var final_result = try allocator.alloc(u8, end_idx - start + 2); // "[" + object + "]"
+        final_result[0] = '[';
+        @memcpy(final_result[1 .. end_idx - start + 1], raw_response[start..end_idx]);
+        final_result[end_idx - start + 1] = ']';
+        return final_result;
+    }
+    
+    // Fallback: return as-is
+    return try allocator.dupe(u8, raw_response);
+}

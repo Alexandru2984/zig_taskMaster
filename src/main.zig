@@ -36,15 +36,20 @@ pub fn main() !void {
         log.warn("Failed to start rate limiter cleanup thread: {}", .{err});
     };
 
+    // Read server config from .env (with defaults)
+    const port_str = config.get("PORT") orelse "9000";
+    const port: u16 = std.fmt.parseInt(u16, port_str, 10) catch 9000;
+    const interface = config.get("INTERFACE") orelse "127.0.0.1";
+    
     var listener = zap.HttpListener.init(.{
-        .port = 9000,
-        .interface = "127.0.0.1", // SECURITY: Only allow local connections (via Nginx)
+        .port = port,
+        .interface = interface.ptr, // Convert slice to C pointer
         .on_request = handleRequest,
         .log = true,
     });
     try listener.listen();
 
-    log.banner("Task Manager", 9000);
+    log.banner("Task Manager", interface, port);
 
     zap.start(.{
         .threads = 2,
@@ -131,6 +136,9 @@ fn handleApi(r: zap.Request, path: []const u8, req_alloc: std.mem.Allocator) !vo
         return;
     } else if (std.mem.eql(u8, path, "/api/auth/reset-password")) {
         try auth_handler.handleResetPassword(r, req_alloc);
+        return;
+    } else if (std.mem.eql(u8, path, "/api/auth/resend-verification")) {
+        try auth_handler.handleResendVerification(r, req_alloc);
         return;
     } else if (std.mem.startsWith(u8, path, "/api/auth/verify")) {
         try auth_handler.handleVerifyEmail(r, req_alloc);

@@ -20,6 +20,26 @@ const userAvatar = document.getElementById('userAvatar');
 
 // ============ AUTH FUNCTIONS ============
 
+// Loading state helpers - prevent double-submit on buttons
+function setButtonLoading(btn, loading) {
+    if (!btn) return;
+    console.log('🔄 Button loading state:', loading, 'Button text:', btn.textContent);
+    if (loading) {
+        btn.dataset.originalText = btn.textContent;
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
+        btn.classList.add('loading');
+    } else {
+        btn.textContent = btn.dataset.originalText || btn.textContent;
+        btn.disabled = false;
+        btn.classList.remove('loading');
+    }
+}
+
+function getFormButton(form) {
+    return form.querySelector('button[type="submit"]');
+}
+
 function getToken() {
     return localStorage.getItem('token');
 }
@@ -136,10 +156,16 @@ function showModal(id) {
 }
 
 function hideModal(id) {
-    document.getElementById(id).classList.remove('active');
-    const error = document.querySelector(`#${id} .form-error`);
+    const modal = document.getElementById(id);
+    modal.classList.remove('active');
+    
+    // Reset any forms in the modal
+    const form = modal.querySelector('form');
+    if (form) form.reset();
+    
+    const error = modal.querySelector('.form-error');
     if (error) error.textContent = '';
-    const success = document.querySelector(`#${id} .form-success`);
+    const success = modal.querySelector('.form-success');
     if (success) success.classList.add('hidden');
 }
 
@@ -152,26 +178,40 @@ function switchModal(fromId, toId) {
 
 async function handleSignup(e) {
     e.preventDefault();
+    const form = e.target;
+    const btn = getFormButton(form);
     const name = document.getElementById('signupName').value;
     const email = document.getElementById('signupEmail').value;
     const password = document.getElementById('signupPassword').value;
     const errorEl = document.getElementById('signupError');
 
+    setButtonLoading(btn, true);
     try {
+        console.log('📤 Sending signup request...');
         const response = await fetch('/api/auth/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password })
         });
 
-        const data = await response.json();
+        console.log('📥 Response status:', response.status);
+        const text = await response.text();
+        console.log('📥 Response text:', text);
+        
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseError) {
+            console.error('❌ JSON parse error:', parseError);
+            errorEl.textContent = 'Server returned invalid response';
+            return;
+        }
 
         if (response.ok) {
             setToken(data.token);
             currentUser = data.user;
             showLoggedIn(currentUser);
             hideModal('signupModal');
-            document.getElementById('signupForm').reset();
             loadTasks();
             
             // Show verify modal
@@ -180,16 +220,22 @@ async function handleSignup(e) {
             errorEl.textContent = data.error || 'Signup failed';
         }
     } catch (error) {
-        errorEl.textContent = 'Connection error';
+        console.error('❌ Signup error:', error);
+        errorEl.textContent = 'Connection error: ' + error.message;
+    } finally {
+        setButtonLoading(btn, false);
     }
 }
 
 async function handleLogin(e) {
     e.preventDefault();
+    const form = e.target;
+    const btn = getFormButton(form);
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     const errorEl = document.getElementById('loginError');
 
+    setButtonLoading(btn, true);
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
@@ -211,6 +257,8 @@ async function handleLogin(e) {
         }
     } catch (error) {
         errorEl.textContent = 'Connection error';
+    } finally {
+        setButtonLoading(btn, false);
     }
 }
 
@@ -287,7 +335,7 @@ async function handleChangePassword(e) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${getToken()}`
             },
-            body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+            body: JSON.stringify({ old_password: currentPassword, new_password: newPassword })
         });
         
         if (response.ok) {
@@ -306,10 +354,13 @@ async function handleChangePassword(e) {
 
 async function handleForgotPassword(e) {
     e.preventDefault();
+    const form = e.target;
+    const btn = getFormButton(form);
     const email = document.getElementById('forgotEmail').value;
     const errorEl = document.getElementById('forgotError');
     const successEl = document.getElementById('forgotSuccess');
     
+    setButtonLoading(btn, true);
     try {
         const response = await fetch('/api/auth/forgot-password', {
             method: 'POST',
@@ -323,6 +374,8 @@ async function handleForgotPassword(e) {
         document.getElementById('forgotForm').reset();
     } catch (error) {
         errorEl.textContent = 'Connection error';
+    } finally {
+        setButtonLoading(btn, false);
     }
 }
 
@@ -352,6 +405,8 @@ function handleCodeInput(input, index) {
 
 async function handleVerifyEmail(e) {
     e.preventDefault();
+    const form = e.target;
+    const btn = getFormButton(form);
     const inputs = document.querySelectorAll('.code-input');
     let code = '';
     inputs.forEach(input => code += input.value);
@@ -364,6 +419,7 @@ async function handleVerifyEmail(e) {
         return;
     }
     
+    setButtonLoading(btn, true);
     try {
         const response = await fetch('/api/auth/verify', {
             method: 'POST',
@@ -385,7 +441,56 @@ async function handleVerifyEmail(e) {
         }
     } catch (error) {
         errorEl.textContent = 'Connection error';
+    } finally {
+        setButtonLoading(btn, false);
     }
+}
+
+// Resend verification code with cooldown
+let resendCooldown = 0;
+
+async function handleResendCode(e) {
+    e.preventDefault();
+    if (resendCooldown > 0) return;
+    
+    const link = document.getElementById('resendLink');
+    const timer = document.getElementById('resendTimer');
+    const errorEl = document.getElementById('verifyError');
+    
+    // Start 30s cooldown
+    resendCooldown = 30;
+    link.classList.add('hidden');
+    timer.classList.remove('hidden');
+    timer.textContent = `Resend in ${resendCooldown}s`;
+    
+    try {
+        const response = await fetch('/api/auth/resend-verification', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+        
+        if (response.ok) {
+            errorEl.textContent = '';
+            timer.textContent = `Code sent! Resend in ${resendCooldown}s`;
+        } else {
+            const data = await response.json();
+            errorEl.textContent = data.error || 'Failed to resend code';
+        }
+    } catch (error) {
+        errorEl.textContent = 'Connection error';
+    }
+    
+    // Countdown timer
+    const interval = setInterval(() => {
+        resendCooldown--;
+        if (resendCooldown > 0) {
+            timer.textContent = `Resend in ${resendCooldown}s`;
+        } else {
+            clearInterval(interval);
+            timer.classList.add('hidden');
+            link.classList.remove('hidden');
+        }
+    }, 1000);
 }
 
 // ============ TASK FUNCTIONS ============

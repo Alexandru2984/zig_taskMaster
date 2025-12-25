@@ -186,6 +186,11 @@
                 <div class="form-success hidden" id="verifySuccess">✅ Email verified successfully!</div>
                 <button type="submit" class="btn-submit">Verify Account</button>
             </form>
+            <p class="modal-footer" id="resendSection">
+                Didn't receive it? 
+                <a href="#" id="resendLink" onclick="handleResendCode(event)">Resend Code</a>
+                <span id="resendTimer" class="resend-timer hidden"></span>
+            </p>
         </div>
     </div>
 

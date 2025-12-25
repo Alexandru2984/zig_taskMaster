@@ -203,33 +203,20 @@ pub fn handleMe(r: zap.Request, req_alloc: std.mem.Allocator) !void {
 }
 
 pub fn handleVerifyEmail(r: zap.Request, req_alloc: std.mem.Allocator) !void {
-    // Extract token from path or query?
-    // main.zig: if (std.mem.startsWith(u8, path, "/api/auth/verify"))
-    // It doesn't show how it extracts the token in the snippet I saw.
-    // Let's assume it's a query param or part of the path.
-    // In main.zig: `try handleVerifyEmail(r, req_alloc);`
-    // I need to check main.zig implementation of handleVerifyEmail which I didn't see fully.
-    // But usually it's `?token=...` or `/verify/<token>`.
-    // I'll assume query param "token" for now, or check main.zig again.
-    
-    // Let's check query param
-    const query = r.query orelse "";
-    var it = std.mem.splitSequence(u8, query, "&");
-    var token: ?[]const u8 = null;
-    while (it.next()) |param| {
-        if (std.mem.startsWith(u8, param, "token=")) {
-            token = param[6..];
-            break;
-        }
-    }
+    // Accept POST with JSON body containing { "code": "123456" }
+    const request = http.parseBody(req_alloc, r, struct { code: []const u8 }) catch {
+        try http.jsonError(r, 400, "Invalid JSON body");
+        return;
+    };
 
-    if (token == null) {
-        try http.jsonError(r, 400, "Missing verification token");
+    const code = request.code;
+    if (code.len == 0) {
+        try http.jsonError(r, 400, "Missing verification code");
         return;
     }
 
-    // Verify token in DB
-    const db_result = db.getUserByVerificationToken(req_alloc, token.?) catch {
+    // Verify code in DB
+    const db_result = db.getUserByVerificationToken(req_alloc, code) catch {
         try http.jsonError(r, 500, "Database error");
         return;
     };
@@ -239,10 +226,18 @@ pub fn handleVerifyEmail(r: zap.Request, req_alloc: std.mem.Allocator) !void {
     defer parsed.deinit();
 
     if (parsed.value.len == 0 or parsed.value[0].result.len == 0) {
-        try http.jsonError(r, 400, "Invalid or expired token");
+        try http.jsonError(r, 400, "Invalid or expired code");
         return;
     }
     const user = parsed.value[0].result[0];
+
+    // Check expiration
+    if (user.verification_expires) |expires| {
+        if (expires < std.time.timestamp()) {
+            try http.jsonError(r, 400, "Verification code expired");
+            return;
+        }
+    }
 
     // Mark verified
     _ = db.updateUserVerified(req_alloc, user.id) catch {
@@ -331,4 +326,51 @@ pub fn handleResetPassword(r: zap.Request, req_alloc: std.mem.Allocator) !void {
     // db.clearResetToken(req_alloc, user.id) ...
 
     try http.jsonSuccess(r, models.SuccessResponse{ .status = "Password reset successfully" });
+}
+
+pub fn handleResendVerification(r: zap.Request, req_alloc: std.mem.Allocator) !void {
+    // Require authentication
+    const user_id = http.getCurrentUserId(req_alloc, r) orelse {
+        try http.jsonError(r, 401, "Not authenticated");
+        return;
+    };
+
+    // Get user to check if already verified
+    const user_result = db.getUserById(req_alloc, user_id) catch {
+        try http.jsonError(r, 500, "Failed to get user");
+        return;
+    };
+    defer req_alloc.free(user_result);
+
+    const parsed = try std.json.parseFromSlice([]models.SurrealResponse(models.User), req_alloc, user_result, .{ .ignore_unknown_fields = true });
+    defer parsed.deinit();
+
+    if (parsed.value.len == 0 or parsed.value[0].result.len == 0) {
+        try http.jsonError(r, 404, "User not found");
+        return;
+    }
+    const user = parsed.value[0].result[0];
+
+    // Check if already verified
+    if (user.email_verified) {
+        try http.jsonError(r, 400, "Email already verified");
+        return;
+    }
+
+    // Generate new verification code
+    const verification_code = try auth.generateVerificationCode(req_alloc);
+    const verification_expires = std.time.timestamp() + 600; // 10 minutes
+
+    // Update user with new code
+    _ = db.setVerificationToken(req_alloc, user_id, verification_code, verification_expires) catch {
+        try http.jsonError(r, 500, "Failed to update verification code");
+        return;
+    };
+
+    // Send email
+    email.sendConfirmationEmail(req_alloc, user.email, user.name, verification_code) catch |err| {
+        std.debug.print("Failed to send verification email: {}\n", .{err});
+    };
+
+    try http.jsonSuccess(r, models.SuccessResponse{ .status = "Verification code sent" });
 }

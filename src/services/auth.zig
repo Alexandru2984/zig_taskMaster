@@ -109,7 +109,21 @@ fn verifyArgon2Password(allocator: std.mem.Allocator, stored_hash: []const u8, p
 
 fn verifyLegacyPassword(allocator: std.mem.Allocator, stored_hash: []const u8, password: []const u8) !bool {
     // Legacy FNV-1a hash (for migration only)
-    const SECRET = config.get("LEGACY_SECRET") orelse "zig-task-manager-secret-2024"; // Fallback for dev/test if not set, but should be set in prod
+    // SECURITY: In production, LEGACY_SECRET MUST be set in .env
+    const SECRET = blk: {
+        if (config.get("LEGACY_SECRET")) |secret| {
+            break :blk secret;
+        }
+        // Check if we're in debug/development mode
+        if (std.debug.runtime_safety) {
+            // Dev mode: warn but use fallback
+            std.debug.print("⚠️ WARNING: LEGACY_SECRET not set! Using default (DEV ONLY)\n", .{});
+            break :blk "zig-task-manager-secret-2024";
+        }
+        // Production mode: fail fast
+        @panic("LEGACY_SECRET environment variable is REQUIRED in production. Set it in your .env file.");
+    };
+    
     var hash: u64 = 14695981039346656037;
     for (password) |byte| {
         hash ^= byte;

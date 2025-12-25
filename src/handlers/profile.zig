@@ -120,6 +120,12 @@ pub fn changePassword(r: zap.Request, req_alloc: std.mem.Allocator) !void {
         return;
     }
 
+    // SECURITY: Prevent reusing same password
+    if (std.mem.eql(u8, request.new_password, request.old_password)) {
+        try http.jsonError(r, 400, "New password must be different from current password");
+        return;
+    }
+
     // Validate new password
     const pwd_result = validation.validatePasswordStrength(request.new_password);
     if (!pwd_result.valid) {

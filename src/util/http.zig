@@ -24,17 +24,49 @@ pub fn getClientIp(r: zap.Request) []const u8 {
     return "127.0.0.1";
 }
 
-/// Get current user ID from Authorization header using secure session validation
+/// Get current user ID from session cookie or Authorization header
+/// Priority: Cookie (more secure) > Authorization header (backwards compatible)
 pub fn getCurrentUserId(allocator: std.mem.Allocator, r: zap.Request) ?[]const u8 {
+    // First try HttpOnly cookie (preferred, more secure)
+    r.parseCookies(false);
+    if (r.getCookieStr(allocator, "session_token")) |maybe_cookie| {
+        if (maybe_cookie) |token| {
+            const user_id = db.validateSession(allocator, token) catch return null;
+            return user_id;
+        }
+    } else |_| {}
+
+    // Fallback to Authorization header (backwards compatible)
     const auth_header = r.getHeader("authorization") orelse return null;
-    
-    // Expect "Bearer <token>"
     if (!std.mem.startsWith(u8, auth_header, "Bearer ")) return null;
     const token = auth_header[7..];
     
-    // Validate session token in database
     const user_id = db.validateSession(allocator, token) catch return null;
     return user_id;
+}
+
+/// Set HttpOnly session cookie (secure against XSS)
+pub fn setAuthCookie(r: zap.Request, token: []const u8) void {
+    r.setCookie(.{
+        .name = "session_token",
+        .value = token,
+        .http_only = true,
+        .secure = false, // Set to true in production with HTTPS
+        .same_site = .Strict,
+        .max_age_s = 7 * 24 * 60 * 60, // 7 days in seconds
+        .path = "/",
+    }) catch {};
+}
+
+/// Clear session cookie (for logout)
+pub fn clearAuthCookie(r: zap.Request) void {
+    r.setCookie(.{
+        .name = "session_token",
+        .value = "",
+        .http_only = true,
+        .max_age_s = 0, // Expire immediately
+        .path = "/",
+    }) catch {};
 }
 
 /// Parse JSON body into a struct

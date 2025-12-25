@@ -98,7 +98,10 @@ pub fn handleSignup(r: zap.Request, req_alloc: std.mem.Allocator) !void {
         return;
     };
 
-    // Return response
+    // SECURITY: Set HttpOnly cookie (prevents XSS token theft)
+    http.setAuthCookie(r, token);
+
+    // Return response (still includes token for backwards compatibility)
     const response = models.AuthResponse{
         .token = token,
         .user = .{
@@ -157,7 +160,10 @@ pub fn handleLogin(r: zap.Request, req_alloc: std.mem.Allocator) !void {
         return;
     };
 
-    // Return response
+    // SECURITY: Set HttpOnly cookie (prevents XSS token theft)
+    http.setAuthCookie(r, token);
+
+    // Return response (still includes token for backwards compatibility)
     const response = models.AuthResponse{
         .token = token,
         .user = .{

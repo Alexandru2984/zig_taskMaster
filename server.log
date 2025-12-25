@@ -13,19 +13,59 @@ INFO: Listening on port 9000
 
 INFO: Server is running 1 worker X 2 threads with facil.io 0.7.4 (epoll)
 * Detected capacity: 131056 open file limit
-* Root pid: 527487
+* Root pid: 529837
 * Press ^C to stop
 
-127.0.0.1 - - [Thu, 25 Dec 2025 01:10:49 GMT] "GET / HTTP/1.1" 200 13651b 637us
-🚫 Hidden/sensitive file blocked: /.well-known/appspecific/com.chrome.devtools.json
-127.0.0.1 - - [Thu, 25 Dec 2025 01:10:49 GMT] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 13b 125us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:10:49 GMT] "GET /style.css HTTP/1.1" 200 19123b 294us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:10:49 GMT] "GET /app.js HTTP/1.1" 200 25878b 364us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:10:49 GMT] "GET /app.wasm HTTP/1.1" 200 1735b 303us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:10:49 GMT] "GET /favicon.ico HTTP/1.1" 404 13b 154us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:10:49 GMT] "GET /api/auth/me HTTP/1.1" 200 123b 85702us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:10:49 GMT] "GET /api/tasks HTTP/1.1" 200 2b 74396us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:11:05 GMT] "PUT /api/profile/password HTTP/1.1" 400 64b 851533us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:11:07 GMT] "PUT /api/profile/password HTTP/1.1" 400 64b 974858us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:11:15 GMT] "PUT /api/profile/password HTTP/1.1" 400 64b 949755us
-127.0.0.1 - - [Thu, 25 Dec 2025 01:11:34 GMT] "PUT /api/profile/password HTTP/1.1" 200 42b 1887877us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:06 GMT] "GET /api/health HTTP/1.1" 200 20b 218us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:06 GMT] "GET /api/ready HTTP/1.1" 200 62b 36876us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:06 GMT] "GET /api/metrics HTTP/1.1" 200 195b 86us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:06 GMT] "GET / HTTP/1.1" 200 13651b 304us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:06 GMT] "HEAD / HTTP/1.1" 200 13651b 344us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:06 GMT] "HEAD /app.js HTTP/1.1" 200 25878b 248us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:06 GMT] "HEAD / HTTP/1.1" 200 13651b 270us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:06 GMT] "HEAD / HTTP/1.1" 200 13651b 210us
+📧 Sending HTML email to: test5143@example.com via Brevo API
+✅ HTML Email sent successfully to: test5143@example.com
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:08 GMT] "POST /api/auth/signup HTTP/1.1" 201 192b 2560789us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:09 GMT] "GET /api/auth/me HTTP/1.1" 200 108b 85597us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:10 GMT] "POST /api/auth/login HTTP/1.1" 200 192b 1708619us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:10 GMT] "GET /api/tasks HTTP/1.1" 200 2b 82979us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:11 GMT] "POST /api/tasks HTTP/1.1" 201 141b 77762us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:11 GMT] "GET /api/tasks HTTP/1.1" 200 143b 76168us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:11 GMT] "PUT /api/tasks/tasks:kxm728xsiy36eqcuepbv HTTP/1.1" 200 140b 121710us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:11 GMT] "DELETE /api/tasks/tasks:kxm728xsiy36eqcuepbv HTTP/1.1" 200 20b 121055us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:36:11 GMT] "GET /etc/passwd HTTP/1.1" 404 13b 51us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:37:53 GMT] "POST /api/auth/login HTTP/1.1" 401 31b 942676us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:38:09 GMT] "POST /api/auth/login HTTP/1.1" 401 31b 1136174us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:38:12 GMT] "POST /api/auth/login HTTP/1.1" 200 207b 888078us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:38:13 GMT] "GET /api/tasks HTTP/1.1" 200 2b 90718us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:41:45 GMT] "GET / HTTP/1.1" 200 13651b 15128us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:41:45 GMT] "GET /style.css HTTP/1.1" 200 19123b 455us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:41:45 GMT] "GET /app.js HTTP/1.1" 200 25878b 608us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:41:45 GMT] "GET /app.wasm HTTP/1.1" 200 1735b 1324us
+127.0.0.1 - - [Thu, 25 Dec 2025 01:41:45 GMT] "GET /favicon.ico HTTP/1.1" 404 13b 86us
+   var req = try request(client, method, uri, .{
+                         ^
+
+error(gpa): memory address 0x716f6fee4000 leaked: 
+/snap/zig/15308/lib/std/http/Client.zig:249:46: 0x12b3df5 in create (std.zig)
+            const base = try gpa.alignedAlloc(u8, .of(Plain), alloc_len);
+                                             ^
+/snap/zig/15308/lib/std/http/Client.zig:1455:51: 0x1283293 in connectTcpOptions (std.zig)
+            const pc = try Connection.Plain.create(client, proxied_host, proxied_port, stream);
+                                                  ^
+/snap/zig/15308/lib/std/http/Client.zig:1408:29: 0x12827bc in connectTcp (std.zig)
+    return connectTcpOptions(client, .{ .host = host, .port = port, .protocol = protocol });
+                            ^
+/snap/zig/15308/lib/std/http/Client.zig:1583:38: 0x1255695 in connect (std.zig)
+    } orelse return client.connectTcp(host, port, protocol);
+                                     ^
+/snap/zig/15308/lib/std/http/Client.zig:1699:36: 0x1230c5b in request (std.zig)
+        break :c try client.connect(host_name, uriPort(uri, protocol), protocol);
+                                   ^
+/snap/zig/15308/lib/std/http/Client.zig:1789:26: 0x1181928 in fetch (std.zig)
+    var req = try request(client, method, uri, .{
+                         ^
+
+⚠️ Memory leak detected!
+
